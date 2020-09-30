@@ -1,15 +1,17 @@
 import { Router } from 'express';
-import FooController from '../controllers/foo';
+import FooRoutes from './foos';
 
-export default class Api {
+export default class ApiRoutes {
 
-    router: Router
+    public router: Router
+    private fooRoutes: FooRoutes = new FooRoutes()
+
     constructor() {
         this.router = Router();
         this.routes();
     }
 
     private routes(): void {
-        this.router.get('/foo', FooController.bar);
+        this.router.use('/foos', this.fooRoutes.router);
     }
 };

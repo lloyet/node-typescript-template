@@ -1,19 +1,20 @@
 import { Router } from 'express';
-import ControllerError from './controllers/error';
-import Api from './api';
+import ErrorController from '../controllers/errorController';
+import ApiRoutes from './api';
 
-export class Routes {
+export default class Routes {
 
     public router: Router
+    public errorController: ErrorController = new ErrorController()
+    private apiRoutes: ApiRoutes = new ApiRoutes()
+
     constructor() {
         this.router = Router();
         this.routes();
     }
 
     public routes(): void {
-        this.router.use('/api', new Api().router);
-        this.router.use(ControllerError.trigger);
+        this.router.use('/api', this.apiRoutes.router);
+        this.router.use(this.errorController.trigger);
     }
 }
-
-export const ErrorHandler = ControllerError.hanlder;
