@@ -1,5 +1,5 @@
 FROM node:alpine as APP
-LABEL maintainer=mobeetravel
+LABEL maintainer=lloyet
 
 WORKDIR /app
 COPY package.json .
