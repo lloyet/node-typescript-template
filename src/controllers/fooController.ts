@@ -1,112 +1,115 @@
 import { Request, Response, NextFunction } from 'express';
-import { IFoo, Foo } from '../models/fooModel';
-import { requestLookUp } from '../utils';
-import { IResponse } from '../recipes/responseRecipe';
+import { Foo } from '../models/fooModel';
+import { handShake, recipLookUp } from '../utils';
+import { IResponse } from '../types';
 
-interface IQuerySearch {
-    foo: string,
-    bar?: number
-};
-
-export class QuerySearch implements IQuerySearch {
+export class QuerySearch {
     public foo: string = ''
     public bar?: number = undefined
 
     public validate(): Promise<any> {
-        return (new Promise((resolve: (mongoQuery: any) => void, reject: () => void): void => {
-            if (!this.isValid()) {
-                return reject();
-            } else {
+        return (new Promise((resolve: (query: any) => void, reject: (err: IResponse) => void): void => {
+            recipLookUp(this.validator(), this).then((): void => {
                 const query: any = {
                     foo: this.foo
                 };
-                if (this.bar) {
-                    query.bar = this.bar;
-                }
+                if (this.bar) query.bar = this.bar;
                 return resolve(query);
-            }
+            }).catch((err: IResponse): void => {
+                return (reject(err));
+            });
         }));
     }
 
-    private isValid(): boolean {
-        return (this.foo !== '' ? true : false);
+    private validator(): any {
+        return ({
+            foo: (foo: string) => foo !== '' ? true : false,
+            bar: (bar: number) => bar > -1 ? true : false
+        });
     }
 };
 
-interface IQueryDetails {
-    id: string
-};
-
-export class QueryDetails implements IQueryDetails {
+export class QueryId {
     public id: string = ''
 
     public validate(): Promise<any> {
-        return (new Promise((resolve: (mongoQuery: any) => void, reject: () => void): void => {
-            if (!this.isValid()) {
-                return reject();
-            } else {
-                return resolve(this.id);
-            }
-        }));
+        return (new Promise((resolve: (query: any) => void, reject: (err: IResponse) => void): void => {
+            recipLookUp(this.validator(), this).then((): void => {
+                return (resolve(this.id));
+            }).catch((err: IResponse): void => {
+                return (reject(err));
+            });
+        }))
     }
 
-    private isValid(): boolean {
-        return (this.id !== '' ? true : false);
+    private validator(): any {
+        return ({
+            id: (id: string) => id !== '' ? true : false
+        });
     }
-}
-
-interface IQueryRegister {
-    foo: string,
-    bar: number
 };
 
-export class QueryRegister implements IQueryRegister {
+export class QueryRegister {
+
     public foo: string = ''
     public bar: number = -1
 
     public validate(): Promise<any> {
-        return (new Promise((resolve: (mongoQuery: any) => void, reject: () => void): void => {
-            if (!this.isValid()) {
-                return reject();
-            } else {
+        return (new Promise((resolve: (query: any) => void, reject: (err: IResponse) => void): void => {
+            recipLookUp(this.validator(), this).then((): void => {
                 return resolve({
                     foo: this.foo,
                     bar: this.bar
                 });
-            }
+            }).catch((err: IResponse): void => {
+                return (reject(err));
+            });
         }));
     }
 
-    private isValid(): boolean {
-        return (this.foo !== ''
-        && this.bar > -1
-        ? true : false);
+    private validator(): any {
+        return ({
+            foo: (foo: string) => foo !== '' ? true : false,
+            bar: (bar: number) => bar > -1 ? true : false
+        });
     }
 }
 
 export class FooController {
 
     public searchHandler(req: Request, res: Response, next: NextFunction) {
-        Foo.search(requestLookUp([req.query], new QuerySearch())).then((data: any): void => {
-            res.status(200).json(data)
+        handShake([req.query], new QuerySearch()).then((recip: any): void => {
+            Foo.search(recip).then((data: any): void => {
+                res.status(200).json(data)
+            }).catch((err: IResponse): void => {
+                next(err);
+            });
         }).catch((err: IResponse): void => {
             next(err);
         });
     }
 
     public detailsHandler(req: Request, res: Response, next: NextFunction) {
-        Foo.details(requestLookUp([req.params], new QueryDetails())).then((data: any): void => {
-            res.status(200).json(data);
-        }).catch((err: IResponse): void => {
-            next(err);
-        })
-    }
-
-    public registerHandler(req: Request, res: Response, next: NextFunction) {
-        Foo.register(requestLookUp([req.body], new QueryRegister())).then((data: any): void => {
-            res.status(201).json(data)
+        handShake([req.params], new QueryId()).then((recip: any): void => {
+            Foo.details(recip).then((data: any): void => {
+                res.status(200).json(data);
+            }).catch((err: IResponse): void => {
+                next(err);
+            });
         }).catch((err: IResponse): void => {
             next(err);
         });
     }
-}
+
+    public registerHandler(req: Request, res: Response, next: NextFunction) {
+        handShake([req.body], new QueryRegister()).then((recip: any): void => {
+            Foo.register(recip).then((data: any): void => {
+                res.status(200).json(data)
+            }).catch((err: IResponse): void => {
+                next(err);
+            });
+        }).catch((err: IResponse): void => {
+            next(err);
+        });
+    }
+};

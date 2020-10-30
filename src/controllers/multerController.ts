@@ -1,6 +1,6 @@
 import multer, { Multer } from 'multer';
 import { MULTER_PATH } from '../config';
-import { QueryFileError } from '../recipes/responseRecipe';
+import { QueryFileError } from '../types';
 
 export const MulterImageController: Multer = multer({
     storage: multer.diskStorage({

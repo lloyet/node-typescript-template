@@ -1,6 +1,5 @@
 import { Model, model, Document, Schema } from 'mongoose';
-import { QuerySearch, QueryDetails, QueryRegister } from '../controllers/fooController';
-import { IResponse, InternalError, QueryFieldError, QueryValuedError, QueryIdError, QueryFoundError } from '../recipes/responseRecipe';
+import { IResponse, InternalError, QueryIdError, QueryFoundError } from '../types';
 
 interface IFooBase {
     foo: string
@@ -14,9 +13,9 @@ export interface IFoo extends IFooSchema {
 };
 
 interface IFooModel extends Model<IFoo> {
-    search: (query: QuerySearch) => Promise<any>,
-    details: (query: QueryDetails) => Promise<any>,
-    register: (query: QueryRegister) => Promise<any>
+    search: (query: any) => Promise<any>,
+    details: (query: any) => Promise<any>,
+    register: (query: any) => Promise<any>
 };
 
 export const FooSchema: Schema<IFoo> = new Schema<IFoo>({
@@ -24,65 +23,45 @@ export const FooSchema: Schema<IFoo> = new Schema<IFoo>({
     bar: { type: Number }
 }, { timestamps:  true });
 
-FooSchema.statics.search = function(query: QuerySearch): Promise<any> {
+FooSchema.statics.search = function(query: any): Promise<any> {
     return new Promise((resolve: (foos: IFoo[]) => void, reject: (err: IResponse) => void): void => {
-        if (!query) {
-            return (reject(QueryFieldError));
-        } else {
-            query.validate().then((mongoQuery: any): void => {
-                Foo.find(mongoQuery).select('-__v -createddAt -updatedAt').then((foos: IFoo[]): void => {
-                    if (foos.length > 0) {
-                        return (resolve(foos));
-                    } else {
-                        return (reject(QueryFoundError));
-                    }
-                }).catch((err: any): void => {
-                        return (reject(InternalError));
-                });
-            }).catch((): void => {
-                return (reject(QueryValuedError));
-            });
-        }
+        Foo.find(query)
+        .select('-__v -createdAt -updatedAt')
+        .then((foos: IFoo[]): void => {
+            if (foos.length > 0) {
+                return (resolve(foos));
+            } else {
+                return (reject(QueryFoundError));
+            }
+        }).catch((err: any): void => {
+                return (reject(InternalError(err)));
+        });
     });
 };
 
-FooSchema.statics.details = function(query: QueryDetails): Promise<any> {
+FooSchema.statics.details = function(query: any): Promise<any> {
     return new Promise((resolve: (foo: IFoo) => void, reject: (err: IResponse) => void): void => {
-        if (!query) {
-            return (reject(QueryFieldError));
-        } else {
-            query.validate().then((mongoQuery: any): void => {
-                Foo.findById(mongoQuery).select('-_id -__v -createdAt -updatedAt').then((foo: IFoo | null): void => {
-                    if (!foo) {
-                        return (reject(QueryIdError));
-                    } else {
-                        return (resolve(foo));
-                    }
-                }).catch((err: any): void => {
-                    return (reject(InternalError));
-                });
-            }).catch((): void => {
-                return (reject(QueryValuedError));
-            });
-        }
+        Foo.findById(query)
+        .select('-_id -__v -createdAt -updatedAt')
+        .then((foo: IFoo | null): void => {
+            if (!foo) {
+                return (reject(QueryIdError));
+            } else {
+                return (resolve(foo));
+            }
+        }).catch((err: any): void => {
+            return (reject(InternalError(err)));
+        });
     });
 };
 
-FooSchema.statics.register = function(query: QueryRegister): Promise<any> {
+FooSchema.statics.register = function(query: any): Promise<any> {
     return new Promise((resolve: (foos: any) => void, reject: (err: IResponse) => void): void => {
-        if (!query) {
-            return (reject(QueryFieldError));
-        } else {
-            query.validate().then((mongoQuery: any): void => {
-                new Foo(mongoQuery).save().then((foo: IFoo): void => {
-                    return (resolve({ id: foo._id }));
-                }).catch((err: any): void => {
-                        return (reject(InternalError));
-                });
-            }).catch((): void => {
-                return (reject(QueryValuedError));
-            });
-        }
+        new Foo(query).save().then((foo: IFoo): void => {
+            return (resolve({ id: foo._id }));
+        }).catch((err: any): void => {
+                return (reject(InternalError(err)));
+        });
     });
 };
 
