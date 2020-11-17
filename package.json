@@ -1,7 +1,7 @@
 {
-  "name": "node",
+  "name": "node-typescript-template",
   "version": "2.0.0",
-  "description": "REST-API NODE.JS",
+  "description": "REST-API micro-services",
   "main": "dist/app.js",
   "scripts": {
     "tsc": "tsc",

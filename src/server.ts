@@ -1,18 +1,19 @@
+import { Server as HttpServer } from 'http';
 import express from 'express';
 import compression from 'compression';
 import helmet from 'helmet';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import Routes from './routes';
-import { MONGODB_URI, PORT } from './config';
+import { MONGODB_URI, PORT, HOST } from './config';
 
 export default class Server {
 
-    public app: express.Application
+    public app: express.Application = express()
+    public httpServer: HttpServer = new HttpServer(this.app)
     private routes: Routes = new Routes()
 
     constructor() {
-        this.app = express();
         this.config();
         this.router();
         this.mongo();
@@ -28,8 +29,8 @@ export default class Server {
             helmet(),
             cors(),
             express.json(),
-            express.urlencoded({ extended: false }),
-            compression()
+            express.urlencoded({ extended: true }),
+            compression(),
         );
     }
 
@@ -45,8 +46,8 @@ export default class Server {
             await mongoose.connect(MONGODB_URI, {
                     keepAlive: true,
                     useNewUrlParser: true,
-                    useCreateIndex: true,
                     useUnifiedTopology: true,
+                    useCreateIndex: true,
                     socketTimeoutMS: 4000
                 }, (err) => {
                 if (err) { console.error(err); }
@@ -55,8 +56,8 @@ export default class Server {
     }
 
     public start(): void {
-        this.app.listen(PORT, () => {
-            console.log(`Listening on ${PORT}`);
+        this.httpServer.listen(PORT, HOST, () => {
+            console.log(`Listening on ${HOST}:${PORT}`);
         })
     }
 }
